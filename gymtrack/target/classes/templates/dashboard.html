@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Dashboard')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <div class="banner">
+        <div>
+            <div class="date" th:text="${#temporals.format(#temporals.createToday(), 'EEEE, dd MMMM yyyy')}">Today</div>
+            <h2>Welcome back, Admin</h2>
+            <p>Ready to sign up a new member today?</p>
+            <a class="btn" th:href="@{/members/new}">+ Add new member</a>
+        </div>
+        <div class="emoji">&#128170;</div>
+    </div>
+
+    <div class="stats">
+        <div class="stat"><div class="l">Total members <span class="ic">&#128101;</span></div><div class="n" th:text="${totalMembers}">0</div></div>
+        <div class="stat"><div class="l">Active memberships <span class="ic">&#9989;</span></div><div class="n" th:text="${activeMembers}">0</div></div>
+        <div class="stat"><div class="l">Expiring in <span th:text="${warningDays}">7</span> days <span class="ic">&#9203;</span></div><div class="n" th:text="${expiringSoon.size()}">0</div></div>
+        <div class="stat"><div class="l">Expired <span class="ic">&#9888;</span></div><div class="n" th:text="${expired.size()}">0</div></div>        <div class="stat"><div class="l">Frozen <span class="ic">&#10052;</span></div><div class="n" th:text="${frozenCount}">0</div></div>
+        <div class="stat"><div class="l">Check-ins today <span class="ic">&#128197;</span></div><div class="n" th:text="${todayCount}">0</div></div>
+    </div>
+
+    <div class="grid2">
+        <div class="card"
+             th:with="exp=${expiringSoon.size()}, exd=${expired.size()}, act=${activeMembers - expiringSoon.size()}, tot=${activeMembers + expired.size()},
+                      pA=${tot > 0 ? act * 100.0 / tot : 0}, pE=${tot > 0 ? exp * 100.0 / tot : 0},
+                      a1=${#numbers.formatDecimal(pA, 1, 'NONE', 2, 'POINT')},
+                      a2=${#numbers.formatDecimal(pA + pE, 1, 'NONE', 2, 'POINT')}">
+            <h2>Membership status</h2>
+            <p class="muted" th:unless="${tot > 0}">No memberships yet. Add a member and record a payment.</p>
+            <div th:if="${tot > 0}">
+                <div class="donut"
+                     th:style="'background: conic-gradient(#22c55e 0 ' + ${a1} + '%, #f59e0b ' + ${a1} + '% ' + ${a2} + '%, #ef4444 ' + ${a2} + '% 100%)'">
+                    <div class="donut-center"><b th:text="${tot}">0</b><span>with a plan</span></div>
+                </div>
+                <ul class="legend">
+                    <li><i style="background:#22c55e"></i>Active <b th:text="${act}">0</b></li>
+                    <li><i style="background:#f59e0b"></i>Expiring <b th:text="${exp}">0</b></li>
+                    <li><i style="background:#ef4444"></i>Expired <b th:text="${exd}">0</b></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Expiring soon</h2>
+            <p class="muted" th:if="${expiringSoon.isEmpty()}">No memberships expiring soon.</p>
+            <table th:unless="${expiringSoon.isEmpty()}">
+                <tr><th>Member</th><th>Ends</th><th>Days left</th></tr>
+                <tr th:each="m : ${expiringSoon}">
+                    <td><a th:href="@{/members/{id}(id=${m.member.id})}" th:text="${m.member.name}">Name</a></td>
+                    <td th:text="${#temporals.format(m.endDate, 'dd MMM yyyy')}">date</td>
+                    <td th:text="${m.daysLeft}">3</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Expired memberships</h2>
+        <p class="muted" th:if="${expired.isEmpty()}">No expired memberships.</p>
+        <table th:unless="${expired.isEmpty()}">
+            <tr><th>Member</th><th>Ended</th><th></th></tr>
+            <tr th:each="m : ${expired}">
+                <td th:text="${m.member.name}">Name</td>
+                <td th:text="${#temporals.format(m.endDate, 'dd MMM yyyy')}">date</td>
+                <td><a class="btn small" th:href="@{/members/{id}(id=${m.member.id})}">Renew</a></td>
+            </tr>
+        </table>
+    </div>
+</main>
+</body>
+</html>

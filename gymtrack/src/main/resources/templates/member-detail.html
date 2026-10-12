@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Member')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+    <h1 th:text="${member.name}">Member</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <div class="grid2">
+        <div class="card">
+            <h2>Profile</h2>
+            <p>Phone: <b th:text="${member.phone}"></b><br>
+               Email: <b th:text="${member.email != null and !member.email.isEmpty()} ? ${member.email} : '-'"></b><br>
+               Joined: <b th:text="${#temporals.format(member.joinDate, 'dd MMM yyyy')}"></b></p>
+            <p>Membership: <span th:class="'badge ' + ${status.css}" th:text="${status.label}">Active</span>
+               <span th:if="${latest != null}" class="muted">
+                   &nbsp;<span th:text="${latest.plan.name}"></span> till
+                   <span th:text="${#temporals.format(latest.endDate, 'dd MMM yyyy')}"></span>
+               </span></p>
+            <a class="btn secondary small" th:href="@{/members/{id}/edit(id=${member.id})}">Edit</a>
+            <form class="inline" th:action="@{/members/{id}/delete(id=${member.id})}" method="post"
+                  onsubmit="return confirm('Delete this member and all their records?')">
+                <button class="btn danger small" type="submit">Delete</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Record payment / renew</h2>
+            <form th:action="@{/members/{id}/renew(id=${member.id})}" method="post">
+                <label>Plan</label>
+                <select name="planId">
+                    <option th:each="p : ${plans}" th:value="${p.id}"
+                            th:text="${p.name + ' - ' + p.durationMonths + ' month(s) - Rs ' + p.price}"></option>
+                </select>
+                <label>Payment mode</label>
+                <select name="mode"><option th:each="m : ${modes}" th:value="${m}" th:text="${m}"></option></select>
+                <p><button class="btn green" type="submit">Pay &amp; activate</button></p>
+            </form>
+        </div>
+    </div>
+    <div class="card">
+        <h2>Freeze membership</h2>
+
+        <div th:if="${latest != null and latest.frozen}">
+            <p>Frozen since <b th:text="${#temporals.format(latest.frozenOn, 'dd MMM yyyy')}">date</b>
+               (<b th:text="${latest.daysFrozenSoFar}">0</b> day(s) so far)
+               <span th:if="${latest.freezeReason != null and !latest.freezeReason.isEmpty()}">
+                   - reason: <span th:text="${latest.freezeReason}"></span></span></p>
+            <p class="muted">When the member returns, click Unfreeze. The end date moves forward by the number of days frozen.</p>
+            <form th:action="@{/members/{id}/unfreeze(id=${member.id})}" method="post">
+                <button class="btn green" type="submit">Unfreeze now</button>
+            </form>
+        </div>
+
+        <div th:if="${latest != null and !latest.frozen and (status.name() == 'ACTIVE' or status.name() == 'EXPIRING_SOON')}">
+            <form class="row" th:action="@{/members/{id}/freeze(id=${member.id})}" method="post"
+                  onsubmit="return confirm('Freeze this membership? The member cannot check in until you unfreeze it.')">
+                <div><label>Reason (optional)</label>
+                    <input name="reason" maxlength="100" placeholder="e.g. Illness, travel"></div>
+                <button class="btn" type="submit">Freeze membership</button>
+            </form>
+            <p class="muted" style="font-size:13px">Pauses the plan. The remaining days are saved and added back when you unfreeze.</p>
+        </div>
+
+        <p class="muted" th:if="${latest == null or status.name() == 'EXPIRED'}">Only an active membership can be frozen.</p>
+        <p class="muted" th:if="${latest != null and latest.frozenDaysTotal > 0}">
+            Total days frozen on this plan: <b th:text="${latest.frozenDaysTotal}">0</b></p>
+    </div>
+    <div class="card">
+        <h2>Member portal login</h2>
+        <p class="muted" th:if="${hasPortalPassword}">
+            This member can log in with phone <b th:text="${member.phone}"></b>. Set a new password below to reset it.</p>
+        <p class="muted" th:unless="${hasPortalPassword}">
+            No password set yet. Set one so this member can log in with phone <b th:text="${member.phone}"></b>.</p>
+        <form class="row" th:action="@{/members/{id}/password(id=${member.id})}" method="post">
+            <div><label>Password (minimum 6 characters)</label>
+                <input type="text" name="password" minlength="6" required autocomplete="off"></div>
+            <button class="btn" type="submit">Save password</button>
+        </form>
+        <p class="muted" style="font-size:13px">Tell the member this password. It is stored encrypted, so you cannot view it again later, only reset it.</p>
+    </div>
+
+    <div class="card">
+        <h2>Attendance</h2>
+        <p>
+            <span th:text="${summary.label()}"></span>:
+            <b th:text="${summary.daysPresent()}">0</b> day(s) present,
+            <b th:text="${summary.totalText()}">0h 0m</b> total workout time
+        </p>
+        <form class="inline" th:action="@{/attendance/checkin}" method="post" th:unless="${checkedIn}">
+            <input type="hidden" name="memberId" th:value="${member.id}">
+            <input type="hidden" name="returnTo" th:value="'/members/' + ${member.id}">
+            <button class="btn green" type="submit">Check in</button>
+        </form>
+        <form class="inline" th:action="@{/attendance/checkout}" method="post" th:if="${checkedIn}">
+            <input type="hidden" name="memberId" th:value="${member.id}">
+            <input type="hidden" name="returnTo" th:value="'/members/' + ${member.id}">
+            <button class="btn danger" type="submit">Check out</button>
+        </form>
+
+        <table style="margin-top:14px" th:unless="${recent.isEmpty()}">
+            <tr><th>Date</th><th>In</th><th>Out</th><th>Duration</th></tr>
+            <tr th:each="a : ${recent}">
+                <td th:text="${#temporals.format(a.attendDate, 'dd MMM yyyy')}"></td>
+                <td th:text="${#temporals.format(a.checkIn, 'HH:mm')}"></td>
+                <td th:text="${a.checkOut != null} ? ${#temporals.format(a.checkOut, 'HH:mm')} : '-'"></td>
+                <td th:text="${a.durationText}"></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Payment history</h2>
+        <p class="muted" th:if="${history.isEmpty()}">No payments yet.</p>
+        <table th:unless="${history.isEmpty()}">
+            <tr><th>Paid on</th><th>Plan</th><th>From</th><th>To</th><th>Amount</th><th>Mode</th></tr>
+            <tr th:each="h : ${history}">
+                <td th:text="${#temporals.format(h.paymentDate, 'dd MMM yyyy')}"></td>
+                <td th:text="${h.plan.name}"></td>
+                <td th:text="${#temporals.format(h.startDate, 'dd MMM yyyy')}"></td>
+                <td th:text="${#temporals.format(h.endDate, 'dd MMM yyyy')}"></td>
+                <td th:text="${'Rs ' + h.amountPaid}"></td>
+                <td th:text="${h.paymentMode}"></td>
+            </tr>
+        </table>
+    </div>
+</main>
+</body>
+</html>

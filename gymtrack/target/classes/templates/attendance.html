@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Attendance')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+    <h1>Attendance - <span th:text="${#temporals.format(today, 'dd MMM yyyy')}"></span></h1>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <div class="card">
+        <h2>Check in / out</h2>
+        <div class="row">
+            <form th:action="@{/attendance/checkin}" method="post" class="row" style="flex:1">
+                <div><label>Member</label>
+                    <select name="memberId">
+                        <option th:each="m : ${members}" th:value="${m.id}" th:text="${m.name + ' (' + m.phone + ')'}"></option>
+                    </select></div>
+                <button class="btn green" type="submit">Check in</button>
+            </form>
+        </div>
+        <p class="muted">To check someone out, use the "Check out" button in the table below.</p>
+    </div>
+
+    <div class="card">
+        <h2>Today's visits</h2>
+        <p class="muted" th:if="${records.isEmpty()}">Nobody has checked in yet.</p>
+        <table th:unless="${records.isEmpty()}">
+            <tr><th>Member</th><th>In</th><th>Out</th><th>Duration</th><th></th></tr>
+            <tr th:each="a : ${records}">
+                <td><a th:href="@{/members/{id}(id=${a.member.id})}" th:text="${a.member.name}"></a></td>
+                <td th:text="${#temporals.format(a.checkIn, 'HH:mm')}"></td>
+                <td th:text="${a.checkOut != null} ? ${#temporals.format(a.checkOut, 'HH:mm')} : '-'"></td>
+                <td th:text="${a.durationText}"></td>
+                <td>
+                    <form class="inline" th:if="${a.checkOut == null}" th:action="@{/attendance/checkout}" method="post">
+                        <input type="hidden" name="memberId" th:value="${a.member.id}">
+                        <button class="btn danger small" type="submit">Check out</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </div>
+</main>
+</body>
+</html>

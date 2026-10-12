@@ -1,0 +1,12 @@
+{
+  "name": "GymTrack",
+  "short_name": "GymTrack",
+  "description": "Check your gym membership, attendance and payments any time.",
+  "start_url": "/portal/login",
+  "display": "standalone",
+  "background_color": "#14151b",
+  "theme_color": "#ff6a00",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

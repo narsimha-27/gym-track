@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Admin login')}"></head>
+<body>
+<style>
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .login-box { width: 100%; max-width: 400px; }
+    .brand-login { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
+    .brand-login span { color: var(--primary); }
+    .role-tag { display: inline-block; background: var(--primary); color: #fff; font-size: 12px; font-weight: 700;
+                padding: 3px 12px; border-radius: 99px; margin-bottom: 10px; letter-spacing: .04em; }
+</style>
+<div class="login-wrap">
+    <div class="login-box">
+        <div class="card">
+            <div class="brand-login">&#127947; Gym<span>Track</span></div>
+            <span class="role-tag">ADMIN</span>
+            <h2>Admin login</h2>
+
+            <div class="alert error" th:if="${param.error}">Invalid username or password.</div>
+            <div class="alert success" th:if="${param.logout}">You have been logged out.</div>
+
+            <form th:action="@{/admin/login}" method="post">
+                <label>Username</label>
+                <input name="username" autofocus required>
+                <label>Password</label>
+                <input type="password" name="password" required>
+                <p><button class="btn" type="submit" style="width:100%">Log in as admin</button></p>
+            </form>
+            <p class="muted" style="font-size:13px;margin:0">
+                Are you a member? <a th:href="@{/portal/login}">Go to the member login</a></p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

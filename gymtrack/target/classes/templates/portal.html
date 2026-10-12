@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('My membership')}"></head>
+<body>
+<style>
+    main { margin: 0 auto; padding: 24px 16px 40px; max-width: 1000px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px;
+              border-bottom: 1px solid var(--line); background: #101116; }
+    .topbar .brand { font-size: 20px; font-weight: 800; }
+    .topbar .brand span { color: var(--primary); }
+    .hero { background: linear-gradient(120deg, #ff6a00, #ff9a3c); border-radius: 18px; padding: 26px 28px; color: #fff;
+            display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+    .hero h1 { margin: 0 0 4px; font-size: 28px; }
+    .hero p { margin: 0; opacity: .95; }
+    .hero .since { background: rgba(255,255,255,.22); padding: 8px 16px; border-radius: 99px; font-size: 13px; font-weight: 600; }
+
+    .layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px; margin-bottom: 18px; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+    .layout .card, .two .card { margin-bottom: 0; }
+    @media (max-width: 800px) { .layout, .two { grid-template-columns: 1fr; } }
+
+    .plan-card { display: flex; gap: 26px; align-items: center; flex-wrap: wrap; }
+    .ring { --p: 0; --c: #22c55e; width: 150px; height: 150px; border-radius: 50%; position: relative; flex: 0 0 auto;
+            background: conic-gradient(var(--c) calc(var(--p) * 1%), var(--panel2) 0); }
+    .ring::after { content: ''; position: absolute; inset: 14px; background: var(--panel); border-radius: 50%; }
+    .ring .mid { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .ring .mid b { font-size: 34px; line-height: 1; }
+    .ring .mid span { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .ring-active { --c: #22c55e; } .ring-expiring_soon { --c: #f59e0b; }
+    .ring-expired { --c: #ef4444; } .ring-no_plan { --c: #6b7280; } .ring-frozen { --c: #3b82f6; }
+    .plan-info { flex: 1; min-width: 200px; }
+    .plan-name { font-size: 26px; font-weight: 800; margin: 4px 0 2px; }
+    .dates { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 8px; }
+    .bar { height: 10px; background: var(--panel2); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+    .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff6a00, #ff9a3c); border-radius: 99px; }
+
+    .tiles { display: grid; gap: 14px; }
+    .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+            display: flex; align-items: center; gap: 14px; }
+    .tile .ic { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,106,0,.15); display: flex;
+                align-items: center; justify-content: center; font-size: 20px; flex: 0 0 auto; }
+    .tile .l { color: var(--muted); font-size: 13px; }
+    .tile .n { font-size: 22px; font-weight: 700; }
+    .tiles3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+    @media (max-width: 600px) { .tiles3 { grid-template-columns: 1fr; } }
+
+    .streak { display: flex; align-items: baseline; gap: 10px; }
+    .streak b { font-size: 44px; line-height: 1; }
+    .streak .fire { font-size: 34px; }
+
+    .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+    .cal-h { font-size: 11px; color: var(--muted); padding-bottom: 2px; }
+    .cal-d { height: 34px; line-height: 34px; border-radius: 9px; font-size: 13px; background: var(--panel2); }
+    .cal-d.empty { background: transparent; }
+    .cal-d.future { color: var(--muted); background: transparent; border: 1px dashed var(--line); line-height: 32px; }
+    .cal-d.on { background: #22c55e; color: #fff; font-weight: 700; }
+    .cal-d.today { outline: 2px solid var(--primary); }
+    .legend2 { display: flex; gap: 16px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+    .legend2 i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
+
+    .visit { display: flex; align-items: center; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+    .visit:last-child { border-bottom: 0; }
+    .datebox { width: 54px; text-align: center; background: var(--panel2); border-radius: 12px; padding: 7px 0; flex: 0 0 auto; }
+    .datebox b { display: block; font-size: 20px; line-height: 1.1; }
+    .datebox span { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+    .visit .times { flex: 1; font-size: 14px; }
+    .pill { background: rgba(34,197,94,.15); color: #86efac; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+    .pill.inside { background: rgba(245,158,11,.18); color: #fcd34d; }
+
+    details.card summary { cursor: pointer; font-size: 17px; font-weight: 700; list-style: none; }
+    details.card summary::-webkit-details-marker { display: none; }
+    details.card summary::after { content: ' \25BE'; color: var(--muted); }
+    details.card[open] summary { margin-bottom: 8px; }
+    .block { margin-bottom: 18px; }
+</style>
+
+<div class="topbar">
+    <div class="brand">&#127947; Gym<span>Track</span></div>
+    <form th:action="@{/portal/logout}" method="post">
+        <button class="btn secondary small" type="submit">Log out</button>
+    </form>
+</div>
+
+<main>
+    <div class="hero">
+        <div>
+            <h1>Hello, <span th:text="${member.name}">Member</span> &#128075;</h1>
+            <p>Here is your membership overview.</p>
+        </div>
+        <div class="since">Member since <span th:text="${#temporals.format(member.joinDate, 'dd MMM yyyy')}">date</span></div>
+    </div>
+
+    <div class="card block" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+            <h2 style="margin:0 0 4px">Gym timings</h2>
+            <div class="muted">Morning <b th:text="${morningHours}">6:00 AM - 11:00 AM</b>
+                &nbsp;|&nbsp; Evening <b th:text="${eveningHours}">4:00 PM - 9:00 PM</b></div>
+        </div>
+        <span th:class="${gymOpen} ? 'badge active' : 'badge expired'" th:text="${gymStatus}">Open now</span>
+    </div>
+
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <div class="alert error" th:if="${status.name() == 'EXPIRED'}">
+        Your membership has expired. Please renew below or contact the gym.</div>
+    <div class="alert error" th:if="${status.name() == 'EXPIRING_SOON'}"
+         th:text="'Your membership expires in ' + ${latest.daysLeft} + ' day(s). Please renew soon.'"></div>
+    <div class="alert error" th:if="${status.name() == 'NO_PLAN'}">
+        You have no membership yet. Please contact the front desk.</div>
+    <div class="alert" th:if="${status.name() == 'FROZEN'}" style="background:rgba(59,130,246,.15);color:#93c5fd"
+         th:text="'Your membership is frozen since ' + ${#temporals.format(latest.frozenOn, 'dd MMM yyyy')} + '. Your remaining ' + ${latest.daysLeft} + ' day(s) are saved. Contact the front desk when you want to resume.'"></div>
+
+    <div class="layout block">
+        <div class="card">
+            <div class="plan-card" th:if="${latest != null}">
+                <div class="ring" th:classappend="'ring-' + ${status.css}" th:style="'--p:' + ${latest.percentLeft}">
+                    <div class="mid">
+                        <b th:text="${status.name() == 'EXPIRED'} ? 0 : ${latest.daysLeft}">0</b>
+                        <span>days left</span>
+                    </div>
+                </div>
+                <div class="plan-info">
+                    <span th:class="'badge ' + ${status.css}" th:text="${status.label}">Active</span>
+                    <div class="plan-name" th:text="${latest.plan.name} + ' plan'">Quarterly plan</div>
+                    <div class="muted" th:text="${latest.plan.durationMonths} + ' month(s) membership'">3 month(s)</div>
+                    <div class="bar"><i th:style="'width:' + ${100 - latest.percentLeft} + '%'"></i></div>
+                    <div class="dates">
+                        <span th:text="${#temporals.format(latest.startDate, 'dd MMM yyyy')}">start</span>
+                        <span th:text="${#temporals.format(latest.endDate, 'dd MMM yyyy')}">end</span>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${latest == null}">
+                <h2>No membership yet</h2>
+                <p class="muted">Ask the front desk to activate a plan for you.</p>
+            </div>
+        </div>
+
+        <div class="tiles">
+            <div class="tile"><div class="ic">&#128197;</div>
+                <div><div class="l">Visits in <span th:text="${summary.label()}">month</span></div>
+                     <div class="n" th:text="${summary.daysPresent()}">0</div></div></div>
+            <div class="tile"><div class="ic">&#9201;</div>
+                <div><div class="l">Workout time this month</div>
+                     <div class="n" th:text="${summary.totalText()}">0h 0m</div></div></div>
+            <div class="tile"><div class="ic">&#128170;</div>
+                <div><div class="l">Last visit</div>
+                     <div class="n" style="font-size:18px"
+                          th:text="${!recent.isEmpty()} ? ${#temporals.format(recent[0].attendDate, 'dd MMM yyyy')} : '-'">-</div></div></div>
+        </div>
+    </div>
+
+    <div class="two block">
+        <div class="card">
+            <h2>Attendance streak</h2>
+            <div class="streak">
+                <span class="fire">&#128293;</span>
+                <b th:text="${streak}">0</b>
+                <span th:text="${streak == 1} ? 'day in a row' : 'days in a row'">days in a row</span>
+            </div>
+            <p class="muted" th:text="${streak == 0} ? 'Visit the gym today to start a new streak.' : 'Great work, keep it going!'"></p>
+
+            <h2 style="margin-top:20px">Monthly goal</h2>
+            <div class="bar"><i th:style="'width:' + ${goalPercent} + '%'"></i></div>
+            <div class="dates">
+                <span><b th:text="${summary.daysPresent()}">0</b> of <span th:text="${goal}">12</span> visits</span>
+                <span th:text="${goalPercent} + '%'">0%</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Attendance calendar <span class="muted" style="font-weight:400;font-size:13px" th:text="'- ' + ${summary.label()}"></span></h2>
+            <div class="cal">
+                <div class="cal-h">Mon</div><div class="cal-h">Tue</div><div class="cal-h">Wed</div>
+                <div class="cal-h">Thu</div><div class="cal-h">Fri</div><div class="cal-h">Sat</div><div class="cal-h">Sun</div>
+                <div class="cal-d" th:each="c : ${calendar}"
+                     th:classappend="${(c.day() == 0 ? 'empty' : (c.attended() ? 'on' : (c.future() ? 'future' : ''))) + (c.today() ? ' today' : '')}"
+                     th:text="${c.day() == 0 ? '' : c.day()}"></div>
+            </div>
+            <div class="legend2">
+                <span><i style="background:#22c55e"></i>Visited</span>
+                <span><i style="background:transparent;outline:2px solid #ff6a00"></i>Today</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card block">
+        <h2>Renew your membership</h2>
+        <div class="alert success" th:if="${pendingRequest != null}">
+            Your request for <b th:text="${pendingRequest.planName}">plan</b> was sent on
+            <span th:text="${#temporals.format(pendingRequest.requestedAt, 'dd MMM, HH:mm')}">date</span>.
+            The gym will contact you to collect the payment.
+        </div>
+        <form th:if="${pendingRequest == null}" th:action="@{/portal/renewal}" method="post" class="row">
+            <div><label>Choose a plan</label>
+                <select name="planId">
+                    <option th:each="p : ${plans}" th:value="${p.id}"
+                            th:text="${p.name + ' - ' + p.durationMonths + ' month(s) - Rs ' + p.price}"></option>
+                </select></div>
+            <button class="btn" type="submit">Request renewal</button>
+        </form>
+        <p class="muted" style="font-size:13px">Payment is collected and recorded at the front desk.</p>
+    </div>
+
+    <div class="card block">
+        <h2>Body progress</h2>
+        <div class="tiles3">
+            <div class="tile"><div class="ic">&#9878;</div>
+                <div><div class="l">Weight</div>
+                     <div class="n" th:text="${latestWeight != null ? latestWeight + ' kg' : '-'}">-</div></div></div>
+            <div class="tile"><div class="ic">&#128207;</div>
+                <div><div class="l">BMI</div>
+                     <div class="n" th:text="${bmi != null ? bmi : '-'}">-</div>
+                     <div class="l" th:if="${bmi != null}" th:text="${bmiCategory}"></div></div></div>
+            <div class="tile"><div class="ic">&#128200;</div>
+                <div><div class="l">Change so far</div>
+                     <div class="n" th:text="${weightChange != null ? weightChange : '-'}">-</div></div></div>
+        </div>
+
+        <p class="muted" th:if="${chartValues.isEmpty()}">Save your weight below to start your progress chart.</p>
+        <div id="wchart" style="margin-bottom:14px"></div>
+
+        <form th:action="@{/portal/progress}" method="post" class="row">
+            <div><label>Weight today (kg)</label>
+                <input type="number" name="weightKg" step="0.1" min="20" max="300" required></div>
+            <div><label>Height (cm)</label>
+                <input type="number" name="heightCm" min="100" max="250" th:value="${member.heightCm}" th:required="${member.heightCm == null}"></div>
+            <button class="btn" type="submit">Save</button>
+        </form>
+        <p class="muted" style="font-size:13px">Saving again on the same day replaces that day's weight. BMI = weight / height squared.</p>
+    </div>
+
+    <div class="card block">
+        <h2>Recent visits</h2>
+        <p class="muted" th:if="${recent.isEmpty()}">No visits recorded yet.</p>
+        <div class="visit" th:each="a : ${recent}">
+            <div class="datebox">
+                <b th:text="${#temporals.format(a.attendDate, 'dd')}">11</b>
+                <span th:text="${#temporals.format(a.attendDate, 'MMM')}">Oct</span>
+            </div>
+            <div class="times">
+                In <b th:text="${#temporals.format(a.checkIn, 'HH:mm')}">17:49</b>
+                &nbsp;&rarr;&nbsp; Out
+                <b th:text="${a.checkOut != null} ? ${#temporals.format(a.checkOut, 'HH:mm')} : '-'">21:54</b>
+            </div>
+            <span th:class="${a.checkOut == null} ? 'pill inside' : 'pill'" th:text="${a.durationText}">4h 05m</span>
+        </div>
+    </div>
+
+    <div class="card block">
+        <h2>My payments</h2>
+        <p class="muted" th:if="${history.isEmpty()}">No payments yet.</p>
+        <table th:unless="${history.isEmpty()}">
+            <tr><th>Paid on</th><th>Plan</th><th>Period</th><th>Amount</th><th>Mode</th><th></th></tr>
+            <tr th:each="h : ${history}">
+                <td th:text="${#temporals.format(h.paymentDate, 'dd MMM yyyy')}"></td>
+                <td th:text="${h.plan.name}"></td>
+                <td th:text="${#temporals.format(h.startDate, 'dd MMM yy')} + ' - ' + ${#temporals.format(h.endDate, 'dd MMM yy')}"></td>
+                <td th:text="${'Rs ' + h.amountPaid}"></td>
+                <td th:text="${h.paymentMode}"></td>
+                <td><a class="btn small secondary" target="_blank"
+                       th:href="@{/portal/receipt/{rid}(rid=${h.id})}">Receipt</a></td>
+            </tr>
+        </table>
+    </div>
+
+    <details class="card">
+        <summary>Change password</summary>
+        <form th:action="@{/portal/password}" method="post" style="max-width:420px">
+            <label>Current password</label>
+            <input type="password" name="currentPassword" required autocomplete="current-password">
+            <label>New password (minimum 6 characters)</label>
+            <input type="password" name="newPassword" minlength="6" required autocomplete="new-password">
+            <label>Confirm new password</label>
+            <input type="password" name="confirmPassword" minlength="6" required autocomplete="new-password">
+            <p><button class="btn" type="submit">Change password</button></p>
+        </form>
+    </details>
+</main>
+
+<script th:inline="javascript">
+    (function () {
+        var labels = /*[[${chartLabels}]]*/ [];
+        var values = /*[[${chartValues}]]*/ [];
+        var box = document.getElementById('wchart');
+        if (!box || values.length === 0) return;
+
+        var W = 560, H = 170, pad = 30;
+        var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+        if (min === max) { min -= 1; max += 1; }
+        var step = values.length > 1 ? (W - 2 * pad) / (values.length - 1) : 0;
+        function x(i) { return values.length > 1 ? pad + i * step : W / 2; }
+        function y(v) { return H - pad - (v - min) / (max - min) * (H - 2 * pad); }
+
+        var pts = values.map(function (v, i) { return x(i) + ',' + y(v); }).join(' ');
+        var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto">';
+        svg += '<polyline fill="none" stroke="#ff6a00" stroke-width="3" points="' + pts + '"/>';
+        values.forEach(function (v, i) {
+            svg += '<circle cx="' + x(i) + '" cy="' + y(v) + '" r="4.5" fill="#ff6a00"/>';
+            svg += '<text x="' + x(i) + '" y="' + (y(v) - 10) + '" text-anchor="middle" font-size="11" fill="#f3f4f6">' + v + '</text>';
+            svg += '<text x="' + x(i) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" fill="#9ca3af">' + labels[i] + '</text>';
+        });
+        svg += '</svg>';
+        box.innerHTML = svg;
+    })();
+</script>
+</body>
+</html>

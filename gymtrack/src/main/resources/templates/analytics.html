@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Analytics')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+    <h1>Analytics</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <div class="stats">
+        <div class="stat"><div class="l">Revenue this month <span class="ic">&#128176;</span></div>
+            <div class="n" th:text="${'Rs ' + revenueThisMonth}">Rs 0</div></div>
+        <div class="stat"><div class="l">Total revenue <span class="ic">&#128200;</span></div>
+            <div class="n" th:text="${'Rs ' + totalRevenue}">Rs 0</div></div>
+        <div class="stat"><div class="l">Collected today <span class="ic">&#128197;</span></div>
+            <div class="n" th:text="${'Rs ' + todayTotal}">Rs 0</div>
+            <div class="muted" style="font-size:12px;margin-top:4px">
+                <span th:each="e : ${todayByMode}" style="margin-right:10px">
+                    <span th:text="${e.key}">CASH</span> <b th:text="${e.value}">0</b>
+                </span>
+            </div></div>
+    </div>
+
+    <div class="grid2">
+        <div class="card">
+            <h2>Revenue, last 6 months (Rs)</h2>
+            <div id="revChart"></div>
+        </div>
+        <div class="card">
+            <h2>Check-ins, last 7 days</h2>
+            <div id="ciChart"></div>
+        </div>
+    </div>
+
+    <div class="grid2" style="margin-top:18px">
+        <div class="card">
+            <h2>Peak hours (visits in the last 30 days)</h2>
+            <div id="peakChart"></div>
+            <p class="muted" style="font-size:12px;margin:6px 0 0">a = AM, p = PM</p>
+        </div>
+        <div class="card">
+            <h2>Revenue by plan (Rs)</h2>
+            <div id="planChart"></div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+        <h2>Inactive members <span class="muted" style="font-weight:400;font-size:13px"
+            th:text="'- active plan but no visit in ' + ${inactiveDays} + ' days'"></span></h2>
+        <p class="muted" th:if="${inactive.isEmpty()}">Everyone with a running plan has visited recently.</p>
+        <table th:unless="${inactive.isEmpty()}">
+            <tr><th>Member</th><th>Phone</th><th>Last visit</th><th>Days away</th><th></th></tr>
+            <tr th:each="i : ${inactive}">
+                <td th:text="${i.member().name}">Name</td>
+                <td th:text="${i.member().phone}">phone</td>
+                <td th:text="${i.lastVisit() != null} ? ${#temporals.format(i.lastVisit(), 'dd MMM yyyy')} : 'Never'">date</td>
+                <td th:text="${i.daysAway()}">20</td>
+                <td><a class="btn small secondary" th:href="@{/members/{id}(id=${i.member().id})}">Open</a></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Export to Excel (CSV)</h2>
+        <div class="row">
+            <a class="btn secondary" th:href="@{/analytics/export/members.csv}">Download member list</a>
+        </div>
+        <form class="row" method="get" th:action="@{/analytics/export/payments.csv}" style="margin-top:14px">
+            <div><label>Payments from (optional)</label><input type="date" name="from"></div>
+            <div><label>Payments to (optional)</label><input type="date" name="to"></div>
+            <button class="btn" type="submit">Download payments</button>
+        </form>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    function short(v) {
+        return v >= 1000 ? (Math.round(v / 100) / 10) + 'k' : String(Math.round(v));
+    }
+
+    function drawBars(id, labels, values) {
+        var box = document.getElementById(id);
+        if (!box) return;
+        var total = values.reduce(function (a, b) { return a + b; }, 0);
+        if (values.length === 0 || total === 0) {
+            box.innerHTML = '<p class="muted">No data yet.</p>';
+            return;
+        }
+        var W = 560, H = 190, padX = 10, padB = 28, padT = 22, gap = 8;
+        var max = Math.max.apply(null, values);
+        var n = values.length;
+        var bw = (W - padX * 2 - gap * (n - 1)) / n;
+
+        var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto">';
+        values.forEach(function (v, i) {
+            var h = (H - padB - padT) * v / max;
+            var x = padX + i * (bw + gap);
+            var y = H - padB - h;
+            svg += '<rect x="' + x + '" y="' + y + '" width="' + bw + '" height="' + Math.max(h, 1) + '" rx="5" fill="#ff6a00"/>';
+            if (v > 0) {
+                svg += '<text x="' + (x + bw / 2) + '" y="' + (y - 6) + '" text-anchor="middle" font-size="11" fill="#f3f4f6">' + short(v) + '</text>';
+            }
+            svg += '<text x="' + (x + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" fill="#9ca3af">' + labels[i] + '</text>';
+        });
+        box.innerHTML = svg + '</svg>';
+    }
+
+    drawBars('revChart',  /*[[${revLabels}]]*/ [],  /*[[${revValues}]]*/ []);
+    drawBars('ciChart',   /*[[${ciLabels}]]*/ [],   /*[[${ciValues}]]*/ []);
+    drawBars('peakChart', /*[[${peakLabels}]]*/ [], /*[[${peakValues}]]*/ []);
+    drawBars('planChart', /*[[${planLabels}]]*/ [], /*[[${planValues}]]*/ []);
+</script>
+</body>
+</html>

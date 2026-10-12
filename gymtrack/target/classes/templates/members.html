@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Members')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<main>
+    <h1>Members</h1>
+    <div th:replace="~{fragments :: flash}"></div>
+
+    <div class="card">
+        <form class="row" th:action="@{/members}" method="get">
+            <div><label>Search by name or phone</label><input name="q" th:value="${q}" placeholder="e.g. Rahul or 98765"></div>
+            <button class="btn" type="submit">Search</button>
+            <a class="btn secondary" th:href="@{/members}">Clear</a>
+            <a class="btn green" th:href="@{/members/new}">+ New member</a>
+        </form>
+    </div>
+
+    <div class="card">
+        <p class="muted" th:if="${members.isEmpty()}">No members found.</p>
+        <table th:unless="${members.isEmpty()}">
+            <tr><th>Name</th><th>Phone</th><th>Plan</th><th>Valid till</th><th>Status</th></tr>
+            <tr th:each="m : ${members}" th:with="ms=${latestMap.get(m.id)}, st=${statusMap.get(m.id)}">
+                <td><a th:href="@{/members/{id}(id=${m.id})}" th:text="${m.name}">Name</a></td>
+                <td th:text="${m.phone}">phone</td>
+                <td th:text="${ms != null} ? ${ms.plan.name} : '-'">plan</td>
+                <td th:text="${ms != null} ? ${#temporals.format(ms.endDate, 'dd MMM yyyy')} : '-'">date</td>
+                <td><span th:class="'badge ' + ${st.css}" th:text="${st.label}">Active</span></td>
+            </tr>
+        </table>
+    </div>
+</main>
+</body>
+</html>

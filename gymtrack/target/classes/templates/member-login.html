@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Member login')}"></head>
+<body>
+<style>
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .login-box { width: 100%; max-width: 400px; }
+    .login-card { margin: 0 0 14px; }
+    .brand-login { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
+    .brand-login span { color: var(--primary); }
+    .role-tag { display: inline-block; background: var(--green); color: #fff; font-size: 12px; font-weight: 700;
+                padding: 3px 12px; border-radius: 99px; margin-bottom: 10px; letter-spacing: .04em; }
+    .timing-card { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0; }
+</style>
+<div class="login-wrap">
+    <div class="login-box">
+        <div class="card login-card">
+            <div class="brand-login">&#127947; Gym<span>Track</span></div>
+            <span class="role-tag">MEMBER</span>
+            <h2>Member login</h2>
+
+            <div class="alert error" th:if="${param.error}">Invalid phone number or password.</div>
+            <div class="alert success" th:if="${param.logout}">You have been logged out.</div>
+
+            <form th:action="@{/portal/login}" method="post">
+                <label>Phone number</label>
+                <input name="username" inputmode="numeric" pattern="\d{10}" maxlength="10"
+                       placeholder="10-digit phone number" autofocus required>
+                <label>Password</label>
+                <input type="password" name="password" required>
+                <p><button class="btn green" type="submit" style="width:100%">Log in</button></p>
+            </form>
+                       <p class="muted" style="font-size:13px;margin:0 0 6px">
+                Don't have a password yet? Ask the front desk to set one for you.</p>
+            <p class="muted" style="font-size:13px;margin:0">
+                Gym staff? <a th:href="@{/admin/login}">Go to the admin login</a></p>
+        </div>
+
+        <div class="card timing-card">
+            <div>
+                <h2 style="margin:0 0 4px">Gym timings</h2>
+                <div class="muted" style="font-size:13px">
+                    Morning <b th:text="${morningHours}">6:00 AM - 11:00 AM</b><br>
+                    Evening <b th:text="${eveningHours}">4:00 PM - 9:00 PM</b>
+                </div>
+            </div>
+            <span th:class="${gymOpen} ? 'badge active' : 'badge expired'" th:text="${gymStatus}">Open now</span>
+        </div>
+    </div>
+</div>
+</body>
+</html>
